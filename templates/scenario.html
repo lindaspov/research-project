@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Procurement Scenario</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ececec;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 700px;
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: #333333;
+        }
+
+        /* TIMER & PROGRESS */
+        .timer-container {
+            margin-top: 30px;
+        }
+
+        .timer {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #222222;
+        }
+
+        .progress-bar-background {
+            width: 100%;
+            background-color: #d0d0d0;
+            border-radius: 12px;
+            height: 15px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 100%;
+            background-color: #0f7d42; /* dunkelgrün wie Platinen */
+            transition: width 1s linear;
+        }
+
+        /* Buttons, falls wir später welche einfügen */
+        .btn {
+            padding: 10px 20px;
+            background-color: #0f7d42;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .btn:hover {
+            background-color: #0c6033;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Procurement Scenario</h2>
+
+        <p>
+            You are representing a supplier company that has been invited by management
+            to participate in an electronic reverse auction (e-auction).
+        </p>
+
+        <p>
+            The objective is to win a production contract for supplying
+            10,000 aluminum casings for automotive control modules.
+        </p>
+
+        <p>
+            The buying firm is an industrial company in the automotive sector.
+            Management has emphasized that this auction is highly competitive
+            and strategically important.
+        </p>
+
+        <p>
+            The auction starts at a price of <strong>€200,000</strong>.
+            Bids must be submitted downward. The supplier with the lowest valid offer
+            will be awarded the contract.
+        </p>
+
+        <p>
+            Your internal production costs are uncertain and lie somewhere between
+            €35,000 and €50,000. The exact cost level is not known to you at the time
+            of bidding.
+        </p>
+
+        <p>
+            Management has announced that your performance in the auction may influence
+            an additional bonus payment.
+        </p>
+
+        <!-- TIMER & PROGRESS BAR -->
+        <div class="timer-container">
+            <div class="timer" id="timer">Loading...</div>
+            <div class="progress-bar-background">
+                <div class="progress-bar-fill" id="progress-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let timeLeft = 60;
+        const totalTime = timeLeft;
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return mins + ":" + (secs < 10 ? "0" + secs : secs);
+        }
+
+        function countdown() {
+            const timer = document.getElementById("timer");
+            const progressBar = document.getElementById("progress-bar");
+
+            timer.innerText = formatTime(timeLeft);
+
+            const progressPercent = (timeLeft / totalTime) * 100;
+            progressBar.style.width = progressPercent + "%";
+
+            if (timeLeft <= 0) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const player = urlParams.get("player");
+                window.location.href = "/strategy?player=" + player;
+            } else {
+                timeLeft--;
+                setTimeout(countdown, 1000);
+            }
+        }
+
+        window.onload = countdown;
+    </script>
+
+</body>
+</html>
+
+
+

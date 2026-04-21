@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reverse e-Auction</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #e6e6e6;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 80px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        .subline {
+            color: #555;
+            margin-bottom: 30px;
+        }
+
+        input[type="text"] {
+            padding: 12px;
+            width: 280px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 12px 22px;
+            background-color: #0f7d42;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0c6033;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Reverse e-Auction Experiment</h1>
+
+    <div class="subline">
+        Please enter your name to begin the experiment
+    </div>
+
+    <form method="POST">
+
+        <input
+            type="text"
+            name="player_name"
+            placeholder="Your name"
+            required
+        >
+
+        <br>
+
+        <button type="submit">
+            Start Experiment
+        </button>
+
+    </form>
+
+</div>
+
+</body>
+</html>

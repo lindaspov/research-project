@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Leaderboard — Round {{ round }}</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 20px;
+            background: #f2f2f2;
+        }
+
+        h2 {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            border-bottom: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background: #fafafa;
+        }
+
+        /* 🟢 Gewinner hervorheben + Animation */
+        .winner {
+            font-weight: bold;
+            color: #1a7f37;
+            background-color: #e6f4ea;
+            transform: scale(1.03);
+            animation: winnerPop 0.5s ease;
+            box-shadow: 0 0 10px rgba(26, 127, 55, 0.4);
+        }
+
+        /* ✨ Animation */
+        @keyframes winnerPop {
+            0% {
+                transform: scale(0.95);
+                background-color: #c8f7dc;
+            }
+            100% {
+                transform: scale(1.03);
+                background-color: #e6f4ea;
+            }
+        }
+
+        .status {
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        button {
+            padding: 8px 14px;
+            margin-top: 20px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* 💬 persönliche Nachricht */
+        .player-message {
+            margin-top: 25px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+<h2>Leaderboard (after Round {{ round }})</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Rank</th>
+            <th>Player</th>
+            <th>Total Profit (€)</th>
+            <th>Total Bonus (€)</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in leaderboard %}
+        <tr {% if loop.index == 1 %}class="winner"{% endif %}>
+            <td>{{ loop.index }}</td>
+            <td>{{ usernames.get(p, p) }}</td>
+            <td>{{ "%.2f"|format(profits.get(p, 0)) }}</td>
+            <td>{{ "%.2f"|format(bonuses.get(p, 0)) }}</td>
+            <td class="status">
+                {% if loop.index == 1 %}
+                    🏆 Winner
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- 💬 persönliche Nachricht -->
+<div class="player-message">
+    {{ player_message }}
+</div>
+
+<form method="POST" action="/next_round">
+    <button type="submit">Next Round</button>
+</form>
+
+</div>
+
+</body>
+</html>

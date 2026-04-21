@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reverse e-Auction</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #e6e6e6;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 40px auto;
+            background: white;
+            padding: 30px 40px;
+            border-radius: 10px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .subline {
+            text-align: center;
+            color: #555;
+            margin-bottom: 25px;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+        }
+
+        .info-btn {
+            padding: 8px 14px;
+            border: none;
+            background: #0f7d42;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .info-btn:hover {
+            background-color: #0c6033;
+        }
+
+        .product {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .product img {
+            height: 160px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .box {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .strategy-text {
+            white-space: pre-wrap;
+            font-size: 14px;
+        }
+
+        .timer {
+            text-align: center;
+            font-size: 26px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .progress {
+            height: 10px;
+            background: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #0f7d42;
+            width: 100%;
+            transition: width 1s linear;
+        }
+
+        .bid-area {
+            text-align: center;
+        }
+
+        input[type="number"] {
+            padding: 10px;
+            width: 200px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 10px 18px;
+            margin-left: 8px;
+            background-color: #0f7d42;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0c6033;
+        }
+
+        .status {
+            margin-top: 20px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .error-box {
+            display: none;
+            background: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 12px;
+            font-weight: 500;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+        }
+
+        .modal-content {
+            background: white;
+            width: 400px;
+            margin: 100px auto;
+            padding: 25px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Reverse e-Auction — Round {{ round }} of {{ max_rounds }}</h1>
+<div class="subline">Lowest bid wins the contract</div>
+
+<div class="top-bar">
+    <button class="info-btn" onclick="openInfo()">Information</button>
+</div>
+
+<div class="product">
+    <img src="/static/Auction.jpeg">
+</div>
+
+<div class="grid">
+
+    <div class="box">
+        <strong>Assigned Strategy: {{ strategy.title }}</strong>
+        <div class="strategy-text">{{ strategy.text }}</div>
+    </div>
+
+    <div class="box">
+
+        <div class="timer" id="timer">2:00</div>
+
+        <div class="progress">
+            <div class="progress-bar" id="progress"></div>
+        </div>
+
+        <div class="bid-area">
+
+            <form id="bidForm">
+                <input type="number" id="bidInput" name="amount" required>
+                <button type="submit">Submit Bid</button>
+            </form>
+
+            <div id="bidError" class="error-box"></div>
+
+            <div class="status">
+                <p><strong>Your last bid:</strong> <span id="myBid">–</span></p>
+                <p><strong>Last bid:</strong> <span id="last">–</span></p>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+</div>
+
+<div class="modal" id="infoModal">
+    <div class="modal-content">
+        <h3>Auction Information</h3>
+        <p>Start price: €200,000</p>
+        <p>Duration: 2 minutes</p>
+        <p>Cost structure: between €35,000 and €50,000</p>
+        <p>Bonus: performance-based</p>
+        <button onclick="closeInfo()">Close</button>
+    </div>
+</div>
+
+<script>
+
+const TOTAL = 120;
+
+function openInfo() {
+    document.getElementById("infoModal").style.display = "block";
+}
+
+function closeInfo() {
+    document.getElementById("infoModal").style.display = "none";
+}
+
+function updateStatus() {
+    fetch("/status")
+        .then(r => r.json())
+        .then(data => {
+
+            if (!data) return;
+
+            if (data.remaining === 0) {
+                window.location.href = "/leaderboard";
+            }
+
+            // Your last bid (server-controlled → verhindert Überschreiben)
+            if (data.your_last_bid !== undefined && data.your_last_bid !== null) {
+                document.getElementById("myBid").innerText = "€" + data.your_last_bid;
+            }
+
+            // Last bid (nur andere Spieler)
+            if (data.last_bid && !data.last_bid.is_self) {
+                document.getElementById("last").innerText =
+                    data.last_bid.player + " bid €" + data.last_bid.amount;
+            }
+
+            const t = data.remaining;
+
+            const min = Math.floor(t / 60);
+            const sec = String(t % 60).padStart(2, "0");
+
+            const timer = document.getElementById("timer");
+            timer.innerText = min + ":" + sec;
+
+            if (t <= 10) timer.style.color = "red";
+            else if (t <= 30) timer.style.color = "orange";
+            else timer.style.color = "black";
+
+            document.getElementById("progress").style.width =
+                (t / TOTAL * 100) + "%";
+
+            const input = document.getElementById("bidInput");
+            if (document.activeElement !== input) {
+                input.value = "";
+            }
+
+        })
+        .catch(err => console.log(err));
+}
+
+setInterval(updateStatus, 1000);
+
+document.getElementById("bidForm").onsubmit = function(e) {
+
+    e.preventDefault();
+
+    const form = this;
+    const input = document.getElementById("bidInput");
+    const submittedValue = input.value;
+
+    fetch("/bid", {
+        method: "POST",
+        body: new FormData(form)
+    })
+    .then(r => r.json())
+    .then(data => {
+    console.log("BID RESPONSE:", data);
+
+        const errorBox = document.getElementById("bidError");
+
+        if (data.success === true) {
+
+            // Fehler zurücksetzen
+            errorBox.innerText = "";
+            errorBox.style.display = "none";
+
+            // Direkt anzeigen
+            document.getElementById("myBid").innerText = "€" + submittedValue;
+
+            document.getElementById("bidInput").value = "";
+
+        } else {
+
+            errorBox.innerText = data.message;
+            errorBox.style.display = "block";
+        }
+
+    });
+
+};
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Your Assigned Strategy</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ececec;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 700px;
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        h3 {
+            font-size: 22px;
+            margin-bottom: 15px;
+            color: #0f7d42;
+        }
+
+        pre {
+            text-align: left;
+            background-color: #f8f8f8;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            font-size: 15px;
+            line-height: 1.5;
+            color: #333333;
+        }
+
+        .status {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #0f7d42;
+        }
+
+        form {
+            margin-top: 25px;
+        }
+
+        label {
+            font-size: 16px;
+            display: block;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        button {
+            font-size: 18px;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            background-color: #0f7d42;
+            color: #ffffff;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0c6033;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+    </style>
+
+<script>
+
+let confirmed = false;
+
+function toggleButton() {
+
+    const checkbox = document.getElementById("confirmBox");
+    const button = document.getElementById("confirmBtn");
+
+    button.disabled = !checkbox.checked;
+
+}
+
+function confirmStrategy() {
+
+    if (confirmed) return;
+
+    confirmed = true;
+
+    document.getElementById("confirmBtn").disabled = true;
+    document.getElementById("confirmBox").disabled = true;
+
+    fetch("/confirm_strategy", { method: "POST" })
+    .then(r => r.json())
+    .then(data => {
+
+        document.getElementById("confirmCount").innerText =
+            data.confirmed + " / 5 confirmed";
+
+    });
+
+}
+
+function checkStatus() {
+
+    fetch("/confirmation_status")
+    .then(r => r.json())
+    .then(data => {
+
+        document.getElementById("confirmCount").innerText =
+            data.confirmed + " / 5 confirmed";
+
+        if(data.confirmed >= 5){
+            window.location.href = "/auction";
+
+        }
+
+    });
+
+}
+
+setInterval(checkStatus, 1000);
+checkStatus();
+
+</script>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Your Assigned Strategy</h2>
+
+<h3>{{ title }}</h3>
+
+<pre>{{ text }}</pre>
+
+<div class="status">
+
+Waiting for participants...<br>
+Confirmed: <span id="confirmCount">3 / 5</span>
+
+</div>
+
+<form onsubmit="event.preventDefault(); confirmStrategy();">
+
+<label>
+
+<input type="checkbox" id="confirmBox" onclick="toggleButton()">
+
+I have read and understood the strategy.
+
+</label>
+
+<button id="confirmBtn" disabled>Confirm Strategy</button>
+
+</form>
+
+</div>
+
+</body>
+</html>
