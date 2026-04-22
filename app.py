@@ -288,6 +288,7 @@ def welcome():
 def name():
     if request.method == "POST":
         username = request.form["player_name"]
+        gender = request.form["gender"]   # 👈 NEU
 
         with player_lock:
             # Session zurücksetzen falls Player nicht mehr aktiv
@@ -305,11 +306,22 @@ def name():
                 else:
                     return "Experiment voll – bitte warten.", 403
 
+        # 🟢 USERNAMES speichern
         if "usernames" not in auction_state:
             auction_state["usernames"] = {}
 
         auction_state["usernames"][session["player"]] = username
 
+        # 🟢 GENDER speichern (NEU)
+        if "genders" not in auction_state:
+            auction_state["genders"] = {}
+
+        auction_state["genders"][session["player"]] = gender
+
+        # 🟢 Optional auch in Session speichern
+        session["gender"] = gender
+
+        # 🟢 Matchups initialisieren (wie vorher)
         if "round_matchups" not in auction_state or not auction_state["round_matchups"]:
             auction_state["round_matchups"] = generate_balanced_rounds()
 
@@ -794,6 +806,7 @@ def calculate_results():
                     writer.writerow([
                         auction_state["round"],
                         real_name,
+                        auction_state.get("genders", {}).get(p, ""),
                         True,
                         strategy,
                         cost,
@@ -812,6 +825,7 @@ def calculate_results():
                     writer.writerow([
                         auction_state["round"],
                         real_name,
+                        auction_state.get("genders", {}).get(p, ""),
                         False,
                         strategy,
                         cost,
