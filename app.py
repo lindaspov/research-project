@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, jsonify, session
+from flask import Flask, render_template, request, redirect, jsonify, session, send_file
 import random
 import time
 import csv
@@ -13,9 +13,6 @@ ACCESS_CODE = "auction2026"
 
 player_lock = Lock()
 active_players = []
-
-app = Flask(__name__)
-app.secret_key = "auction_secret_key"
 
 # ===============================
 # DATA LOGGING
@@ -32,6 +29,9 @@ def initialize_logging():
 
     DATA_FILE = f"auction_data_{timestamp}.csv"
     ROUND_FILE = f"round_results_{timestamp}.csv"
+    
+    auction_state["auction_data_file"] = DATA_FILE
+    auction_state["round_results_file"] = ROUND_FILE
 
     with open(DATA_FILE, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f, delimiter=";")
@@ -466,6 +466,22 @@ def leaderboard():
         usernames=auction_state.get("usernames", {}),
         player_message=player_message
     )
+
+@app.route("/download_results")
+def download_results():
+    file = auction_state.get("round_results_file")
+    if not file:
+        return "No results file yet", 404
+    return send_file(file, as_attachment=True)
+
+
+@app.route("/download_data")
+def download_data():
+    file = auction_state.get("auction_data_file")
+    if not file:
+        return "No data file yet", 404
+    return send_file(file, as_attachment=True)
+
 
 @app.route("/next_round", methods=["POST"])
 def next_round():
