@@ -27,8 +27,8 @@ def initialize_logging():
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    DATA_FILE = f"auction_data_{timestamp}.csv"
-    ROUND_FILE = f"round_results_{timestamp}.csv"
+    DATA_FILE = "auction_data.csv"
+    ROUND_FILE = "round_results.csv"
     
     auction_state["auction_data_file"] = DATA_FILE
     auction_state["round_results_file"] = ROUND_FILE
@@ -116,7 +116,7 @@ strategies = {
 How to proceed:
 1. Begin with a moderate bid.
 2. Observe the lowest current bids.
-3. Each time you are undercut, lower your price slightly (e.g., by 2–5 €).
+3. Each time you are undercut, lower your price slightly (e.g., by 200-500 €).
 4. Keep a buffer and avoid major price drops.
 
 Key points:
@@ -469,18 +469,11 @@ def leaderboard():
 
 @app.route("/download_results")
 def download_results():
-    file = auction_state.get("round_results_file")
-    if not file:
-        return "No results file yet", 404
-    return send_file(file, as_attachment=True)
-
+    return send_file("round_results.csv", as_attachment=True)
 
 @app.route("/download_data")
 def download_data():
-    file = auction_state.get("auction_data_file")
-    if not file:
-        return "No data file yet", 404
-    return send_file(file, as_attachment=True)
+    return send_file("auction_data.csv", as_attachment=True)
 
 
 @app.route("/next_round", methods=["POST"])
@@ -926,8 +919,7 @@ def goodbye():
 # RUN
 # ===============================
 
+initialize_logging()
+
 if __name__ == "__main__":
-
-    initialize_logging()
-
     app.run(debug=True, use_reloader=False)
