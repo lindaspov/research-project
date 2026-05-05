@@ -43,7 +43,7 @@ def initialize_logging():
             "cost",
             "bid",
             "margin",
-            "cumulative_profit",
+            "bid_count",
         ])
 
     with open(ROUND_FILE, "w", newline="", encoding="utf-8") as f:
@@ -65,12 +65,11 @@ def initialize_logging():
         ])
 
 def log_bid(player, amount):
+    auction_state["bid_counts"][player] = auction_state["bid_counts"].get(player, 0) + 1
     real_name = auction_state.get("usernames", {}).get(player, player)
 
     cost = auction_state["participant_costs"].get(player)
     margin = amount - cost if cost is not None else 0
-
-    cumulative_profit = auction_state["total_profits"].get(player, 0)
 
     if player in HUMAN_PLAYERS:
         round_index = auction_state["round"] - 1
@@ -99,7 +98,7 @@ def log_bid(player, amount):
             cost,
             amount,
             margin,
-            cumulative_profit
+            auction_state["bid_counts"][player]
         ])
 
         f.flush()
@@ -177,7 +176,7 @@ How to proceed:
 1. Observe quietly throughout the round.
 2. Submit your bid only in the final seconds.
 3. Slightly undercut the lowest current bid.
-
+z6
 Key points:
 - Early bidding exposes your tactics.
 - Timing is everything.
@@ -424,22 +423,16 @@ def leaderboard():
     
     if not session.get("authorized"):
         return redirect("/")
-
-    current_round = auction_state["round"]
-
-    # 🔵 jede 5. Runde → kumuliert
-    if current_round % 5 == 0:
-        profits = auction_state["total_profits"]
-        bonuses = auction_state["total_bonuses"]
-    else:
-        # 🟢 sonst → nur aktuelle Runde
-        profits = auction_state["profits"]
-        bonuses = auction_state["bonuses"]
-
-    #Sortierung
-    sorted_players = sorted(
+    
+    winner = auction_state["lowest_bidder"]
+    winner_key = winner
+    bids = auction_state["last_bid_by_player"]
+    profits = auction_state["profits"]
+    total_profits = auction_state["total_profits"]
+    
+    total_leaderboard = sorted(
         ALL_PLAYERS,
-        key=lambda p: profits.get(p, 0),
+        key=lambda p: total_profits.get(p, 0),
         reverse=True
     )
 
@@ -468,21 +461,27 @@ def leaderboard():
     player_message = ""
 
     if current_player:
-        if current_player == sorted_players[0]:
+        if current_player == winner:
             player_message = "🏆 You won this round!"
         else:
             player_message = random.choice(loser_messages)
+            
+    profits = auction_state.get("profits", {})
 
     # Template rendern
     return render_template(
         "leaderboard.html",
         round=auction_state["round"],
         max_rounds=auction_state["max_rounds"],
-        leaderboard=sorted_players,
+        winner=winner,
+        winner_key=winner_key,
+        bids=bids,
         profits=profits,
-        bonuses=bonuses,
+        total_leaderboard=total_leaderboard,
+        total_profits=total_profits,
+        total_bonuses=auction_state["total_bonuses"],
         usernames=auction_state.get("usernames", {}),
-        player_message=player_message
+        player_message=player_message,                      
     )
 
 @app.route("/download_results")
@@ -603,6 +602,9 @@ def bid():
 
     player = session.get("player")
     cost = auction_state["participant_costs"][player]
+    
+    if amount < 35000:
+        return jsonify({"success": False, "message": "Bid must be at least 35,000 €"})
 
     # REGELN
     #if amount < cost:
@@ -636,6 +638,7 @@ def start_round():
     auction_state["bids"] = []
     
     auction_state["last_bid_by_player"] = {}
+    auction_state["bid_counts"] = {}
 
     auction_state["profits"] = {}
     auction_state["bonuses"] = {}
@@ -662,10 +665,12 @@ def register_bid(player, amount):
 
     auction_state["bids"].append({
         "player": player,
-        "amount": amount
+        "amount": amount,
+        "round": auction_state["round"]
     })
 
     auction_state["last_bid_by_player"][player] = amount
+    print(auction_state["last_bid_by_player"])
     
     cost = auction_state["participant_costs"][player]
     profit = amount - cost
@@ -694,7 +699,7 @@ def process_price_chaser(now):
 
     dummy = "Sarah"
 
-    if now - auction_state["last_actions"][dummy] < random.randint(6, 9):
+    if now - auction_state["last_actions"][dummy] < random.randint(9, 18):
         return
 
     auction_state["last_actions"][dummy] = now
@@ -705,11 +710,11 @@ def process_price_chaser(now):
     distance = current - cost
 
     if distance > 50000:
-        drop = random.randint(3000, 4500)
+        drop = random.randint(2000, 3750)
     elif distance > 20000:
-        drop = random.randint(550, 2200)
+        drop = random.randint(550, 1900)
     else:
-        drop = random.randint(20, 110)
+        drop = random.randint(20, 100)
 
     remaining = AUCTION_DURATION - (time.time() - auction_state["start_time"])
 
@@ -717,6 +722,8 @@ def process_price_chaser(now):
         drop = int(drop * 1.5)
 
     bid = current - drop
+    
+    bid = int(bid / 100) * 100
 
     if bid >= cost:
         register_bid(dummy, bid)
@@ -725,7 +732,7 @@ def process_step_dropper(now):
 
     dummy = "Noah"
 
-    if now - auction_state["last_actions"][dummy] < random.randint(10, 16):
+    if now - auction_state["last_actions"][dummy] < random.randint(10, 19):
         return
 
     auction_state["last_actions"][dummy] = now
@@ -740,13 +747,15 @@ def process_step_dropper(now):
         distance = current - cost
 
         if distance > 40000:
-            drop = random.randint(5000, 7000)
+            drop = random.randint(3500, 5500)
         elif distance > 15000:
-            drop = random.randint(2000, 5400)
+            drop = random.randint(1800, 4800)
         else:
-            drop = random.randint(50, 300)
+            drop = random.randint(50, 200)
 
         bid = current - drop
+        
+        bid = int(bid / 100) * 100
 
     if bid >= cost:
         register_bid(dummy, bid)
@@ -755,7 +764,7 @@ def process_noisy_undercutter(now):
 
     dummy = "Jenny"
 
-    if now - auction_state["last_actions"][dummy] < random.randint(5, 12):
+    if now - auction_state["last_actions"][dummy] < random.randint(11, 20):
         return
 
     auction_state["last_actions"][dummy] = now
@@ -769,9 +778,9 @@ def process_noisy_undercutter(now):
 
     if distance > 40000:
         if r < 0.3:
-            drop = random.randint(3800, 11000)
+            drop = random.randint(3100, 6000)
         elif r < 0.7:
-            drop = random.randint(1000, 4000)
+            drop = random.randint(1000, 3000)
         else:
             drop = random.randint(200, 800)
     else:
@@ -781,6 +790,8 @@ def process_noisy_undercutter(now):
             drop = random.randint(10, 100)
 
     bid = current - drop
+    
+    bid = int(bid / 100) * 100
 
     if bid >= cost:
         register_bid(dummy, bid)
@@ -793,9 +804,9 @@ def calculate_results():
     if auction_state.get("results_written"):
         return
     auction_state["results_written"] = True
-    
+
     print("CALCULATE RESULTS RUNNING")
-    print("STEP A")
+
     try:
         if auction_state["lowest_bidder"] is None:
             return
@@ -803,8 +814,8 @@ def calculate_results():
         winner = auction_state["lowest_bidder"]
         winning_bid = auction_state["lowest_bid"]
         winner_name = auction_state.get("usernames", {}).get(winner, winner)
-                                        
-        
+
+        # Leader bestimmen
         if auction_state["total_profits"]:
             leader = max(
                 auction_state["total_profits"],
@@ -812,7 +823,7 @@ def calculate_results():
             )
         else:
             leader = winner
-            
+
         leader_name = auction_state.get("usernames", {}).get(leader, leader)
 
         with open(ROUND_FILE, "a", newline="", encoding="utf-8") as f:
@@ -820,15 +831,18 @@ def calculate_results():
             writer = csv.writer(f, delimiter=";")
 
             for p in ALL_PLAYERS:
+                is_last = (p == winner)
                 real_name = auction_state.get("usernames", {}).get(p, p)
                 cost = auction_state["participant_costs"][p]
-                
+
+                # Letztes Gebot holen
                 bid = ""
                 for b in reversed(auction_state["bids"]):
                     if b["player"] == p:
                         bid = b["amount"]
                         break
 
+                # Strategie bestimmen
                 if p in HUMAN_PLAYERS:
                     round_index = auction_state["round"] - 1
                     matchup = auction_state.get("round_matchups")
@@ -844,55 +858,44 @@ def calculate_results():
                 else:
                     strategy = ""
 
+                # 🔥 Gewinner-Logik
                 if p == winner:
+                    print("CHECK", auction_state.get("usernames", {}).get(p, p), winner_name)
                     profit = winning_bid - cost
-                    bonus = round(profit * random.uniform(0.01, 0.02), 2)
-
-                    auction_state["profits"][p] = profit
-                    auction_state["bonuses"][p] = bonus
-
-                    auction_state["total_profits"][p] = auction_state["total_profits"].get(p, 0) + profit
-                    auction_state["total_bonuses"][p] = auction_state["total_bonuses"].get(p, 0) + bonus
-
-                    total_profit = auction_state["total_profits"][p]
-
-                    writer.writerow([
-                        auction_state["round"],
-                        real_name,
-                        auction_state.get("genders", {}).get(p, ""),
-                        True,
-                        strategy,
-                        cost,
-                        bid,
-                        profit,
-                        bonus,
-                        winning_bid,
-                        total_profit,
-                        winner_name,
-                        leader_name
-                    ])
-
+                    bonus = round(winning_bid * 0.01, 2)
                 else:
-                    auction_state["profits"][p] = 0
-                    auction_state["bonuses"][p] = 0
+                    profit = 0
+                    bonus = 0
 
-                    total_profit = auction_state["total_profits"].get(p, 0)
+                # 🔥 Werte speichern (für ALLE Spieler!)
+                auction_state["profits"][p] = profit
+                auction_state["bonuses"][p] = bonus
 
-                    writer.writerow([
-                        auction_state["round"],
-                        real_name,
-                        auction_state.get("genders", {}).get(p, ""),
-                        False,
-                        strategy,
-                        cost,
-                        bid, 
-                        0,
-                        0,
-                        "",
-                        total_profit,
-                        "",
-                        leader_name
-                    ])
+                auction_state["total_profits"][p] = \
+                    auction_state["total_profits"].get(p, 0) + profit
+
+                auction_state["total_bonuses"][p] = \
+                    auction_state["total_bonuses"].get(p, 0) + bonus
+
+                # Für CSV
+                total_profit = auction_state["total_profits"][p]
+
+                # 🔥 CSV schreiben (korrekt eingerückt!)
+                writer.writerow([
+                    auction_state["round"],
+                    real_name,
+                    auction_state.get("genders", {}).get(p, ""),
+                    (p == winner),
+                    strategy,
+                    cost,
+                    bid,
+                    profit,
+                    bonus,
+                    winning_bid if is_last else "",
+                    total_profit if is_last else "",
+                    winner_name if is_last else "",
+                    leader_name if is_last else ""
+                ])
 
             f.flush()
             os.fsync(f.fileno())

@@ -82,35 +82,103 @@
 
 <div class="container">
 
-<h2>Leaderboard (after Round {{ round }})</h2>
+<div style="margin-bottom: 25px; padding: 15px; border-radius: 8px; background: #f5f7fa; border: 1px solid #ddd;">
+    
+    <h3 style="margin-top:0;">Round {{ round }} Result - Contract Winner</h3>
+    <div style="display:flex; gap:15px; margin-top:10px;">
 
-<table>
-    <thead>
+        <!-- WINNER -->
+        <div style="flex:1; padding:15px; background:#ffffff; border-radius:10px; border:1px solid #ddd; text-align:center;">
+            <div style="font-size:0.9em; color:#666;">Winner</div>
+            <div style="font-size:1.3em; font-weight:bold;">
+                🏆 {{ usernames.get(winner, winner) }}
+            </div>
+        </div>
+
+        <!-- BID -->
+        <div style="flex:1; padding:15px; background:#ffffff; border-radius:10px; border:1px solid #ddd; text-align:center;">
+            <div style="font-size:0.9em; color:#666;">Winning Bid</div>
+            <div style="font-size:1.3em; font-weight:bold;">
+                💰 {{ bids.get(winner, "-") }} €
+            </div>
+        </div>
+
+        <!-- PROFIT -->
+        <div style="flex:1; padding:15px; background:#ffffff; border-radius:10px; border:1px solid #ddd; text-align:center;">
+            <div style="font-size:0.9em; color:#666;">Profit</div>
+            <div style="font-size:1.3em; font-weight:bold; color: {{ 'red' if profits.get(winner_key, 0) < 0 else 'black' }}">
+                📉 {{ profits.get(winner_key, "-") }} €
+            </div>
+        </div>
+
+    </div>
+
+    <!-- INFO BUTTON -->
+    <div style="margin-top:10px; text-align:right;">
+        <button onclick="toggleInfo()" 
+                style="border:none; background:none; cursor:pointer; font-size:18px;">
+         ℹ️
+        </button>
+    </div>
+
+    <!-- INFO TEXT (HIDDEN) -->
+    <div id="info-box" 
+         style="display:none; margin-top:10px; padding:10px; background:#eef3ff; border-radius:6px; font-size:0.9em; color:#444;">
+         
+        The contract is awarded to the bidder with the lowest bid. 
+        This means that winning the auction does not necessarily imply a positive profit, 
+        as bids below production costs can result in losses.
+    </div>
+
+</div>
+
+<h3 style="margin-top:25px;">📊 Overall Leaderboard</h3>
+<p style="font-size:0.9em; color:#666; margin-bottom:10px;">
+    Ranking based on total accumulated profit across all rounds.
+</p>
+
+<table style="width:100%; border-collapse:collapse; margin-top:20px; background:white; border-radius:8px; overflow:hidden;">
+
+    <thead style="background:#f0f2f5;">
         <tr>
-            <th>Rank</th>
-            <th>Player</th>
-            <th>Total Profit (€)</th>
-            <th>Total Bonus (€)</th>
-            <th>Status</th>
+            <th style="padding:10px; text-align:left;">Rank</th>
+            <th style="padding:10px; text-align:left;">Player</th>
+            <th style="padding:10px; text-align:left;">Total Profit (€)</th>
+            <th style="padding:10px; text-align:left;">Total Bonus (€)</th>
+            <th style="padding:10px; text-align:left;">Status</th>
         </tr>
     </thead>
+
     <tbody>
-        {% for p in leaderboard %}
-        <tr {% if loop.index == 1 %}class="winner"{% endif %}>
-            <td>{{ loop.index }}</td>
-            <td>{{ usernames.get(p, p) }}</td>
-            <td>{{ "%.2f"|format(profits.get(p, 0)) }}</td>
-            <td>{{ "%.2f"|format(bonuses.get(p, 0)) }}</td>
-            <td class="status">
-                {% if loop.index == 1 %}
+        {% for p in total_leaderboard %}
+        <tr style="border-top:1px solid #eee; {% if p == winner %}background:#fff8e1;{% endif %}">
+            
+            <td style="padding:10px;">{{ loop.index }}</td>
+            
+            <td style="padding:10px;">
+                {{ usernames.get(p, p) }}
+            </td>
+            
+            <td style="padding:10px;">
+                {{ "%.2f"|format(total_profits.get(p, 0)) }}
+            </td>
+            
+            <td style="padding:10px;">
+                {{ "%.2f"|format(total_bonuses.get(p, 0)) }}
+            </td>
+            
+            <td style="padding:10px;">
+                {% if p == winner %}
                     🏆 Winner
                 {% else %}
                     —
                 {% endif %}
             </td>
+
         </tr>
         {% endfor %}
     </tbody>
+
 </table>
 
 <!-- 💬 persönliche Nachricht -->
@@ -123,6 +191,15 @@
 </form>
 
 </div>
-
+<script>
+function toggleInfo() {
+    var box = document.getElementById("info-box");
+    if (box.style.display === "none") {
+        box.style.display = "block";
+    } else {
+        box.style.display = "none";
+    }
+}
+</script>
 </body>
 </html>
