@@ -699,7 +699,7 @@ def process_price_chaser(now):
 
     dummy = "Sarah"
 
-    if now - auction_state["last_actions"][dummy] < random.randint(9, 18):
+    if now - auction_state["last_actions"][dummy] < random.randint(10, 22):
         return
 
     auction_state["last_actions"][dummy] = now
@@ -710,7 +710,7 @@ def process_price_chaser(now):
     distance = current - cost
 
     if distance > 50000:
-        drop = random.randint(2000, 3750)
+        drop = random.randint(2000, 3700)
     elif distance > 20000:
         drop = random.randint(550, 1900)
     else:
@@ -732,7 +732,7 @@ def process_step_dropper(now):
 
     dummy = "Noah"
 
-    if now - auction_state["last_actions"][dummy] < random.randint(10, 19):
+    if now - auction_state["last_actions"][dummy] < random.randint(13, 23):
         return
 
     auction_state["last_actions"][dummy] = now
@@ -747,7 +747,7 @@ def process_step_dropper(now):
         distance = current - cost
 
         if distance > 40000:
-            drop = random.randint(3500, 5500)
+            drop = random.randint(2500, 4200)
         elif distance > 15000:
             drop = random.randint(1800, 4800)
         else:
@@ -764,7 +764,7 @@ def process_noisy_undercutter(now):
 
     dummy = "Jenny"
 
-    if now - auction_state["last_actions"][dummy] < random.randint(11, 20):
+    if now - auction_state["last_actions"][dummy] < random.randint(12, 25):
         return
 
     auction_state["last_actions"][dummy] = now
@@ -778,7 +778,7 @@ def process_noisy_undercutter(now):
 
     if distance > 40000:
         if r < 0.3:
-            drop = random.randint(3100, 6000)
+            drop = random.randint(2900, 4000)
         elif r < 0.7:
             drop = random.randint(1000, 3000)
         else:
